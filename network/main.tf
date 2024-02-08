@@ -92,24 +92,12 @@ resource "aws_route_table" "default_route_table" {
 }
 
 resource "aws_internet_gateway" "internet_gateway" {
-  count  = local.create_public_subnet && !var.egress_only ? 1 : 0
+  count  = local.create_public_subnet ? 1 : 0
   vpc_id = aws_vpc.this.id
   tags = merge(var.tags,
     {
       Usage    = "VPC"
       Name     = "${var.aws_region}-${var.vpc_name}-igw"
-      OwnerVpc = "${var.aws_region}-${var.vpc_name}"
-    }
-  )
-}
-
-resource "aws_egress_only_internet_gateway" "egress_igw" {
-  count  = local.create_public_subnet && var.egress_only ? 1 : 0
-  vpc_id = aws_vpc.this.id
-  tags = merge(var.tags,
-    {
-      Usage    = "VPC"
-      Name     = "${var.aws_region}-${var.vpc_name}-egress-igw"
       OwnerVpc = "${var.aws_region}-${var.vpc_name}"
     }
   )
@@ -131,7 +119,7 @@ resource "aws_route_table" "igw_route_table" {
   }
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = var.egress_only ? aws_egress_only_internet_gateway.egress_igw[0].id : aws_internet_gateway.internet_gateway[0].id
+    gateway_id = aws_internet_gateway.internet_gateway[0].id
   }
   tags = merge(var.tags, {
     Usage    = "VPC"

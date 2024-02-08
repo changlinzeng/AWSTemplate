@@ -37,11 +37,6 @@ variable "public_subnets_cidr_blocks" {
   #  ]
 }
 
-variable "egress_only" {
-  type    = bool
-  default = false
-}
-
 variable "tags" {
   type    = map(string)
   default = {}
