@@ -91,6 +91,18 @@ data "aws_vpcs" "main_vpc" {
   }
 }
 
+module "mysql_single" {
+  source = "./rds/mysql"
+  region = var.aws_region
+  vpc_id = data.aws_vpcs.main_vpc.ids[0]
+  db_name = "product_catalog"
+  engine = "mysql"
+  engine_version = "8.0"
+  master_username = "root"
+  master_password = "admin123456"
+  port = 3306
+}
+
 #module "ec2" {
 #  source = "./ec2"
 #  vpc_id = data.aws_vpcs.main_vpc.ids[0]
