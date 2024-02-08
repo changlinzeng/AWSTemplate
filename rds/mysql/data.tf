@@ -8,3 +8,7 @@ data "aws_subnets" "private_subnets" {
     values = ["Private"]
   }
 }
+
+data "aws_vpc" "target_vpc" {
+  id = var.vpc_id
+}

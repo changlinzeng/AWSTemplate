@@ -1,5 +1,5 @@
 resource "random_id" "db_instance_id" {
-  prefix = "${var.region}-${var.engine}"
+  prefix      = "${var.region}-${var.engine}"
   byte_length = 8
   keepers = {
     db_name = var.db_name
@@ -15,6 +15,28 @@ resource "aws_db_subnet_group" "this_subnet_group" {
   subnet_ids = data.aws_subnets.private_subnets.ids
   tags = merge(var.tags, {
     Usage = "RDS"
+  })
+}
+
+resource "aws_security_group" "this_security_group" {
+  name   = "${local.db_id}-sg"
+  vpc_id = var.vpc_id
+  ingress {
+    from_port        = var.port
+    to_port          = var.port
+    protocol         = "TCP"
+    cidr_blocks      = [data.aws_vpc.target_vpc.cidr_block]
+  }
+  egress {
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 0
+    to_port     = 0
+  }
+  tags = merge(var.tags, {
+    Usage    = "VPC"
+    Name     = "${local.db_id}-sg"
+    OwnerVpc = var.vpc_id
   })
 }
 
@@ -43,7 +65,7 @@ resource "aws_db_instance" "this" {
   character_set_name                  = var.character_set_name
   timezone                            = var.time_zone
 
-  vpc_security_group_ids = var.security_groups_ids
+  vpc_security_group_ids = length(var.security_groups_ids) == 0 ? [aws_security_group.this_security_group.id] : var.security_groups_ids
   db_subnet_group_name   = var.db_subnet_group_name != "" && var.db_subnet_group_name != null ? var.db_subnet_group_name : aws_db_subnet_group.this_subnet_group.name
   parameter_group_name   = var.parameter_group_name
   option_group_name      = var.option_group_name
@@ -57,7 +79,7 @@ resource "aws_db_instance" "this" {
   apply_immediately           = true
   maintenance_window          = var.maintenance_window
 
-  skip_final_snapshot         = true
+  skip_final_snapshot = true
   #  snapshot_identifier       = var.snapshot_identifier
   #  copy_tags_to_snapshot     = true
   #  skip_final_snapshot       = var.skip_final_snapshot
