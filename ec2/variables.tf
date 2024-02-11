@@ -42,6 +42,19 @@ variable "stop_protection" {
   default = false
 }
 
+variable "ingresses" {
+  type = list(object({
+    from_port = number
+    to_port = number
+    protocol = string
+  }))
+  default = [{
+    from_port = 0
+    to_port = 0
+    protocol = "TCP"
+  }]
+}
+
 variable "user_data" {
   type    = string
   default = ""

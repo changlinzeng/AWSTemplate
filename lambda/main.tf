@@ -5,6 +5,7 @@ resource "aws_lambda_function" "this" {
   architectures = var.architectures
   role          = aws_iam_role.basic_lambda_exec_role.arn
   filename      = local.function_type_file ? var.filename : null
+#  source_code_hash = local.function_type_file ? filebase64sha256(var.filename) : (local.function_type_s3 ? filebase64sha256(var.s3_object_id) : null)
   s3_bucket     = local.function_type_s3 ? var.s3_bucket_id : null
   s3_key        = local.function_type_s3 ? var.s3_object_id : null
   image_uri     = local.function_type_image ? var.image_uri : null

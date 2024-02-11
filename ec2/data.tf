@@ -1,3 +1,7 @@
+data "aws_vpc" "target" {
+  id = var.vpc_id
+}
+
 data "aws_ami" "redhat_9_3_0_x86_64" {
   most_recent = true
   filter {

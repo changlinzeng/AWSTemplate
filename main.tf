@@ -92,18 +92,41 @@ data "aws_vpcs" "main_vpc" {
 }
 
 module "mysql_single" {
-  source = "./rds/mysql"
-  region = var.aws_region
-  vpc_id = data.aws_vpcs.main_vpc.ids[0]
-  db_name = "product_catalog"
-  engine = "mysql"
-  engine_version = "8.0"
+  source          = "./rds/mysql"
+  region          = var.aws_region
+  vpc_id          = data.aws_vpcs.main_vpc.ids[0]
+  db_name         = "product_catalog"
+  engine          = "mysql"
+  engine_version  = "8.0"
   master_username = "root"
   master_password = "admin123456"
-  port = 3306
+  port            = 3306
 }
 
-#module "ec2" {
-#  source = "./ec2"
-#  vpc_id = data.aws_vpcs.main_vpc.ids[0]
-#}
+module "ec2" {
+  source = "./ec2"
+  vpc_id = data.aws_vpcs.main_vpc.ids[0]
+  #  vpc_id = aws_default_vpc.default.id
+  ingresses = [{
+    from_port = 8000
+    to_port   = 8999
+    protocol  = "TCP"
+  }]
+}
+
+module "alb" {
+  source  = "./elb"
+  lb_name = "test-alb"
+  listeners = [{
+    protocol    = "HTTP"
+    port        = 80
+    action_type = "forward"
+  }]
+  target_group = {
+    name        = ""
+    port        = 8088
+    protocol    = "HTTP"
+    target_type = "instance"
+  }
+  vpc_id = data.aws_vpcs.main_vpc.ids[0]
+}
