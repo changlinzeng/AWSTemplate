@@ -62,7 +62,7 @@ resource "aws_subnet" "public_subnets" {
   tags = merge(var.tags,
     {
       Usage    = "VPC"
-      Name     = "${var.aws_region}-${var.vpc_name}-subnet${count.index}"
+      Name     = "${var.aws_region}-${var.vpc_name}-public-subnet${count.index}"
       OwnerVpc = "${var.aws_region}-${var.vpc_name}"
       Tier     = "Public"
     }
@@ -111,7 +111,7 @@ resource "aws_route_table" "igw_route_table" {
     gateway_id = "local"
   }
   dynamic "route" {
-    for_each = var.secondary_cidr_block != "" ? [1] : [0]
+    for_each = var.secondary_cidr_block != "" ? [1] : []
     content {
       cidr_block = var.secondary_cidr_block
       gateway_id = "local"
