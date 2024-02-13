@@ -51,7 +51,7 @@ module "test_lambda" {
 #}
 
 module "test_api_gateway_lambda" {
-  source               = "./apigateway/aws_proxy"
+  source               = "./apigateway/proxy"
   api_name             = "test-lambda-api"
   lambda_function_name = "test-lambda-java"
   function_alias       = "apigw-target"
@@ -65,11 +65,9 @@ module "test_api_gateway_lambda" {
     cache_data_encrypted = false
     enable_metrics       = false
     logging_level        = "OFF"
-    #    logging_level        = "INFO"
   }
   enable_cloudwatch = false
 }
-
 
 #module "s3" {
 #  source      = "./s3"
@@ -114,19 +112,57 @@ module "ec2" {
   }]
 }
 
-module "alb" {
-  source  = "./elb"
-  lb_name = "test-alb"
+#module "alb" {
+#  source  = "./elb"
+#  lb_name = "test-alb"
+#  listeners = [{
+#    protocol    = "HTTP"
+#    port        = 80
+#    action_type = "forward"
+#  }]
+#  target_group = {
+#    name        = ""
+#    port        = 8088
+#    protocol    = "HTTP"
+#    target_type = "instance"
+#  }
+#  vpc_id = data.aws_vpcs.main_vpc.ids[0]
+#}
+
+module "private-nlb" {
+  source   = "./elb"
+  lb_name  = "test-private-nlb"
+  lb_type  = "network"
+  internal = true
   listeners = [{
-    protocol    = "HTTP"
+    protocol    = "TCP"
     port        = 80
     action_type = "forward"
   }]
   target_group = {
     name        = ""
     port        = 8088
-    protocol    = "HTTP"
+    protocol    = "TCP"
     target_type = "instance"
   }
   vpc_id = data.aws_vpcs.main_vpc.ids[0]
+}
+
+module "test_api_gateway_nlb" {
+  source           = "./apigateway/proxy"
+  api_name         = "test-nlb-api"
+  aws_region       = var.aws_region
+  integration_type = "HTTP_PROXY"
+  target_arns      = ["arn:aws:elasticloadbalancing:us-east-1:478332897299:loadbalancer/net/test-private-nlb/0322a5d39bafd2c2"]
+  stage = {
+    create               = true
+    name                 = "test-nlb"
+    enable_cache         = false
+    cache_size           = 0.5
+    cache_ttl_seconds    = 300
+    cache_data_encrypted = false
+    enable_metrics       = false
+    logging_level        = "OFF"
+  }
+  enable_cloudwatch = false
 }

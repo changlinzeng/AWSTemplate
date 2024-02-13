@@ -16,6 +16,21 @@ variable "method" {
   default = "ANY"
 }
 
+variable "integration_type" {
+  type = string
+  default = "AWS_PROXY"
+  validation {
+    condition = contains(["AWS_PROXY", "HTTP_PROXY"], var.integration_type)
+    error_message = "Integration type must be AWS_PROXY, HTTP_PROXY, AWS or HTTP"
+  }
+}
+
+variable "target_arns" {
+  description = "Arns of the target NLB when integration type is HTTP_PROXY"
+  type = list(string)
+  default = []
+}
+
 variable "authorization" {
   type    = string
   default = "NONE"
@@ -37,6 +52,7 @@ variable "authorization_scopes" {
 
 variable "lambda_function_name" {
   type = string
+  default = ""
 }
 
 variable "function_alias" {
