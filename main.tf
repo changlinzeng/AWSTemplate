@@ -36,6 +36,16 @@ module "test_lambda" {
   }
 }
 
+#module "test_lambda_rds" {
+#  source        = "./lambda"
+#  function_name = "test-lambda-java-rds"
+#  function_type = "file"
+#  filename      = "${path.module}/lambda/lambda-1.0-SNAPSHOT.jar"
+#  runtime       = "java21"
+#  handler       = "lambda.RdsHandler::handleRequest"
+#  architectures = ["arm64"]
+#}
+
 #module "test_dynamodb_table" {
 #  source = "./dynamodb"
 #  name   = "product_catalog"
@@ -165,4 +175,11 @@ module "test_api_gateway_nlb" {
     logging_level        = "OFF"
   }
   enable_cloudwatch = false
+}
+
+module "efs" {
+  source = "./efs"
+  name   = "test-efs"
+  backup = false
+  vpc_id = data.aws_vpcs.main_vpc.ids[0]
 }

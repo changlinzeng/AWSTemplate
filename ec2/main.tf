@@ -72,7 +72,7 @@ resource "aws_ec2_instance_connect_endpoint" "this_endpoint" {
 }
 
 resource "aws_instance" "this" {
-  ami                         = data.aws_ami.ubuntu_22_04_amd64.image_id
+  ami                         = data.aws_ami.amazon_linux_2024_x86_64.id
   instance_type               = "t2.micro"
   count                       = var.instance_number
   subnet_id                   = data.aws_subnets.private_subnets.ids[0]

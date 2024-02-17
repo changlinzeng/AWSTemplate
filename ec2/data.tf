@@ -2,6 +2,23 @@ data "aws_vpc" "target" {
   id = var.vpc_id
 }
 
+data "aws_ami" "amazon_linux_2024_x86_64" {
+  most_recent = true
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-kernel-5.10-hvm-2.0.20240131.0-x86_64-gp2"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
+  }
+  owners = ["amazon"]
+}
+
 data "aws_ami" "redhat_9_3_0_x86_64" {
   most_recent = true
   filter {
