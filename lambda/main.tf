@@ -9,6 +9,7 @@ resource "aws_lambda_function" "this" {
   s3_bucket     = local.function_type_s3 ? var.s3_bucket_id : null
   s3_key        = local.function_type_s3 ? var.s3_object_id : null
   image_uri     = local.function_type_image ? var.image_uri : null
+  publish       = var.publish
   vpc_config {
     security_group_ids = var.vpc_config_security_groups
     subnet_ids         = var.vpc_config_subnets
@@ -85,4 +86,13 @@ resource "aws_lambda_event_source_mapping" "sqs_event" {
   batch_size                         = var.sqs_event_source.batch_size
   maximum_batching_window_in_seconds = var.sqs_event_source.batch_window
   function_response_types            = var.sqs_event_source.report_batch_item_failures ? ["ReportBatchItemFailures"] : []
+}
+
+resource "null_resource" "function_alias" {
+  count = var.publish && var.alias != "" && var.alias != null ? 1 : 0
+  provisioner "local-exec" {
+    command = <<EOT
+      aws lambda create-alias --function-name ${var.function_name} --name "${var.alias}" --function-version "${aws_lambda_function.this.version}" --description "${var.alias_description}"
+    EOT
+  }
 }

@@ -102,6 +102,21 @@ variable "sqs_event_source" {
   }
 }
 
+variable "publish" {
+  type    = bool
+  default = true
+}
+
+variable "alias" {
+  type    = string
+  default = ""
+}
+
+variable "alias_description" {
+  type    = string
+  default = ""
+}
+
 variable "tags" {
   type    = map(string)
   default = {}

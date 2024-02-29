@@ -34,6 +34,8 @@ module "test_lambda" {
     batch_window               = 0
     report_batch_item_failures = true
   }
+  publish = true
+  alias   = "test-alias"
 }
 
 #module "test_lambda_rds" {
