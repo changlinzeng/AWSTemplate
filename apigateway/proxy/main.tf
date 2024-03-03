@@ -44,14 +44,14 @@ resource "aws_api_gateway_integration" "http_proxy_integration" {
   http_method             = aws_api_gateway_method.this_method.http_method
   resource_id             = aws_api_gateway_rest_api.this.root_resource_id
   integration_http_method = "ANY"
-#  uri                     = var.uri
-  uri                     = "http://vpclink-${var.api_name}.${var.aws_region}.amazonaws.com"
-  type                    = "HTTP_PROXY"
-  connection_type         = "VPC_LINK"
-  connection_id           = aws_api_gateway_vpc_link.this_vpc_link[0].id
-  cache_key_parameters    = []
-  request_parameters      = {}
-  request_templates       = {}
+  #  uri                     = var.uri
+  uri                  = "http://vpclink-${var.api_name}.${var.aws_region}.amazonaws.com"
+  type                 = "HTTP_PROXY"
+  connection_type      = "VPC_LINK"
+  connection_id        = aws_api_gateway_vpc_link.this_vpc_link[0].id
+  cache_key_parameters = []
+  request_parameters   = {}
+  request_templates    = {}
 }
 
 resource "aws_api_gateway_vpc_link" "this_vpc_link" {
@@ -64,11 +64,22 @@ resource "aws_api_gateway_vpc_link" "this_vpc_link" {
   })
 }
 
-resource "aws_lambda_permission" "allow_invoke" {
+# add resource based policy to Lambda to grant access to api gateway
+resource "aws_lambda_permission" "invoke_lambda" {
   count         = var.integration_type == "AWS_PROXY" ? 1 : 0
-  statement_id  = "ApiGatewayInvokeLambda"
+  statement_id  = "${data.aws_lambda_function.backend[0].function_name}-ApiGatewayInvokeLambda"
   action        = "lambda:InvokeFunction"
   function_name = data.aws_lambda_function.backend[0].function_name
+  principal     = "apigateway.amazonaws.com"
+}
+
+# access tp lambda function alias
+resource "aws_lambda_permission" "invoke_lambda_alias" {
+  count         = var.function_alias != "" && var.function_alias != null && var.integration_type == "AWS_PROXY" ? 1 : 0
+  statement_id  = "${var.function_alias}-ApiGatewayInvokeLambdaAlias"
+  action        = "lambda:InvokeFunction"
+  function_name = data.aws_lambda_function.backend[0].function_name
+  qualifier     = var.function_alias
   principal     = "apigateway.amazonaws.com"
 }
 
@@ -77,8 +88,8 @@ resource "aws_api_gateway_deployment" "this_deployment" {
   rest_api_id = aws_api_gateway_rest_api.this.id
   triggers = {
     redeployment = sha1(jsonencode([
+      aws_api_gateway_rest_api.this.id,
       aws_api_gateway_method.this_method.id,
-      #      aws_api_gateway_integration.this_integration[0].id
       local.this_integration
     ]))
   }
@@ -94,6 +105,10 @@ resource "aws_api_gateway_stage" "this_stage" {
   stage_name            = var.stage.name
   cache_cluster_enabled = var.stage.enable_cache
   cache_cluster_size    = var.stage.enable_cache ? var.stage.cache_size : null
+  variables             = var.stage.variables
+  tags = merge(var.tags, {
+    Usage = "ApiGateway"
+  })
 }
 
 resource "aws_api_gateway_method_settings" "all" {
@@ -119,51 +134,7 @@ resource "aws_api_gateway_method_settings" "all" {
 # CloudWatch integration
 resource "aws_api_gateway_account" "this" {
   count               = var.enable_cloudwatch ? 1 : 0
-  cloudwatch_role_arn = aws_iam_role.cloudwatch[0].arn
-}
-
-resource "aws_iam_role" "cloudwatch" {
-  count              = var.enable_cloudwatch ? 1 : 0
-  name               = "ApiGatewayCloudwatchGlobal"
-  assume_role_policy = data.aws_iam_policy_document.assume_role.json
-}
-
-data "aws_iam_policy_document" "assume_role" {
-  statement {
-    effect = "Allow"
-
-    principals {
-      type        = "Service"
-      identifiers = ["apigateway.amazonaws.com"]
-    }
-
-    actions = ["sts:AssumeRole"]
-  }
-}
-
-data "aws_iam_policy_document" "cloudwatch" {
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:DescribeLogGroups",
-      "logs:DescribeLogStreams",
-      "logs:PutLogEvents",
-      "logs:GetLogEvents",
-      "logs:FilterLogEvents",
-    ]
-
-    resources = ["*"]
-  }
-}
-
-resource "aws_iam_role_policy" "cloudwatch" {
-  count  = var.enable_cloudwatch ? 1 : 0
-  name   = "default"
-  role   = aws_iam_role.cloudwatch[0].id
-  policy = data.aws_iam_policy_document.cloudwatch.json
+  cloudwatch_role_arn = data.aws_iam_role.cloudwatch_role.arn
 }
 
 locals {

@@ -5,6 +5,10 @@ resource "random_pet" "s3_bucket_name" {
 
 resource "aws_default_vpc" "default" {}
 
+module "iam" {
+  source = "./iam"
+}
+
 module "sqs" {
   source     = "./sqs"
   queue_name = "test-queue"
@@ -19,7 +23,7 @@ module "test_lambda" {
   source        = "./lambda"
   function_name = "test-lambda-java"
   function_type = "file"
-  filename      = "${path.module}/lambda/lambda-1.1-SNAPSHOT.jar"
+  filename      = "${path.module}/lambda/lambda-1.0-SNAPSHOT.jar"
   image_uri     = ""
   s3_bucket_id  = ""
   s3_object_id  = ""
@@ -34,8 +38,9 @@ module "test_lambda" {
     batch_window               = 0
     report_batch_item_failures = true
   }
-  publish = true
-  alias   = "test-alias"
+  publish    = false
+  alias      = "test-alias"
+  depends_on = [module.iam]
 }
 
 #module "test_lambda_rds" {
@@ -77,6 +82,45 @@ module "test_api_gateway_lambda" {
     cache_data_encrypted = false
     enable_metrics       = false
     logging_level        = "OFF"
+    variables            = {}
+  }
+  enable_cloudwatch = false
+  depends_on        = [module.iam]
+}
+
+module "test_lambda_kotlin" {
+  source        = "./lambda"
+  function_name = "test-lambda-kotlin"
+  function_type = "file"
+  filename      = "${path.module}/lambda/KotlinLambda-1.0-SNAPSHOT-jar-with-dependencies.jar"
+  image_uri     = ""
+  s3_bucket_id  = ""
+  s3_object_id  = ""
+  runtime       = "java21"
+  handler       = "lambda.ApiGatewayHandler::handleRequest"
+  architectures = ["arm64"]
+  publish       = true
+  alias         = "apigw-v1"
+  integrations  = ["apigateway"]
+  depends_on    = [module.iam]
+}
+
+module "test_api_gateway_lambda_kotlin" {
+  source               = "./apigateway/proxy"
+  api_name             = "test-lambda-api-kotlin"
+  lambda_function_name = "test-lambda-kotlin"
+  function_alias       = "apigw-v1"
+  aws_region           = var.aws_region
+  stage = {
+    create               = true
+    name                 = "test-lambda-kotlin"
+    enable_cache         = false
+    cache_size           = 0.5
+    cache_ttl_seconds    = 300
+    cache_data_encrypted = false
+    enable_metrics       = false
+    logging_level        = "OFF"
+    variables            = {}
   }
   enable_cloudwatch = false
 }
@@ -175,8 +219,10 @@ module "test_api_gateway_nlb" {
     cache_data_encrypted = false
     enable_metrics       = false
     logging_level        = "OFF"
+    variables            = {}
   }
   enable_cloudwatch = false
+  depends_on        = [module.iam]
 }
 
 module "efs" {

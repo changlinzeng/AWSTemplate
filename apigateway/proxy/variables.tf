@@ -17,18 +17,18 @@ variable "method" {
 }
 
 variable "integration_type" {
-  type = string
+  type    = string
   default = "AWS_PROXY"
   validation {
-    condition = contains(["AWS_PROXY", "HTTP_PROXY"], var.integration_type)
+    condition     = contains(["AWS_PROXY", "HTTP_PROXY"], var.integration_type)
     error_message = "Integration type must be AWS_PROXY, HTTP_PROXY, AWS or HTTP"
   }
 }
 
 variable "target_arns" {
   description = "Arns of the target NLB when integration type is HTTP_PROXY"
-  type = list(string)
-  default = []
+  type        = list(string)
+  default     = []
 }
 
 variable "authorization" {
@@ -51,7 +51,7 @@ variable "authorization_scopes" {
 }
 
 variable "lambda_function_name" {
-  type = string
+  type    = string
   default = ""
 }
 
@@ -70,6 +70,7 @@ variable "stage" {
     cache_data_encrypted = bool
     enable_metrics       = bool
     logging_level        = string
+    variables            = map(string)
   })
   default = {
     create               = false
@@ -80,9 +81,10 @@ variable "stage" {
     cache_data_encrypted = false
     enable_metrics       = false
     logging_level        = "INFO"
+    variables            = {}
   }
   validation {
-    condition     = var.stage.create && contains([0.5, 1.6, 6.1, 13.5, 28.4, 58.2, 118, 237], var.stage.cache_size)
+    condition     = !var.stage.create || var.stage.create && contains([0.5, 1.6, 6.1, 13.5, 28.4, 58.2, 118, 237], var.stage.cache_size)
     error_message = "Invalid cache size"
   }
   validation {

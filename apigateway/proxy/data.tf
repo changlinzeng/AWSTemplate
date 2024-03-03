@@ -9,6 +9,10 @@ data "aws_lambda_alias" "backend" {
   name          = var.function_alias
 }
 
+data "aws_iam_role" "cloudwatch_role" {
+  name = "CloudWatchRole"
+}
+
 locals {
   target_id = var.integration_type != "AWS_PROXY" ? "" : var.function_alias == "" ? data.aws_lambda_function.backend[0].invoke_arn : "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${data.aws_lambda_alias.backend[0].arn}/invocations"
 }
