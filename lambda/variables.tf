@@ -50,9 +50,9 @@ variable "architectures" {
   }
 }
 
-variable "vpc_config_security_groups" {
-  type    = list(string)
-  default = []
+variable "vpc_id" {
+  type = string
+  default = ""
 }
 
 variable "vpc_config_subnets" {

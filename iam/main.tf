@@ -90,3 +90,10 @@ resource "aws_iam_role_policy_attachment" "sqs_read" {
   role       = aws_iam_role.basic_lambda_exec_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole"
 }
+
+# VPC access
+resource "aws_iam_role_policy_attachment" "vpc_access" {
+  count      = var.enabled_vpc_access ? 1 : 0
+  role       = aws_iam_role.basic_lambda_exec_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}

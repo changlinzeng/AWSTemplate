@@ -8,6 +8,11 @@ variable "lambda_integrations" {
   default = ["dynamodb", "sqs"]
 }
 
+variable "enabled_vpc_access" {
+  type = bool
+  default = false
+}
+
 variable "tags" {
   type    = map(string)
   default = {}

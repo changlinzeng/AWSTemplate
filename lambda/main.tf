@@ -10,9 +10,12 @@ resource "aws_lambda_function" "this" {
   s3_key           = local.function_type_s3 ? var.s3_object_id : null
   image_uri        = local.function_type_image ? var.image_uri : null
   publish          = var.publish
-  vpc_config {
-    security_group_ids = var.vpc_config_security_groups
-    subnet_ids         = var.vpc_config_subnets
+  dynamic "vpc_config" {
+    for_each = local.vpc_access_enabled ? [1] : []
+    content {
+      security_group_ids = aws_security_group.vpc_access_sg[*].id
+      subnet_ids         = var.vpc_config_subnets
+    }
   }
   tags = merge(var.tags,
     {
@@ -50,9 +53,22 @@ resource "null_resource" "function_alias" {
   }
   provisioner "local-exec" {
     command = <<EOT
+      aws lambda delete-alias --function-name "${var.function_name}" --name "${var.alias}"
       aws lambda create-alias --function-name "${var.function_name}" --name "${var.alias}" --function-version "${aws_lambda_function.this.version}" --description "${var.alias_description}"
       aws lambda create-function-url-config --function-name "${var.function_name}" --qualifier "${var.alias}" --auth-type "${var.function_url.authorization_type}"
       aws lambda add-permission --function-name "${var.function_name}" --statement-id "${var.alias}-AllowPublicAccess" --action "lambda:InvokeFunctionUrl" --principal "*" --qualifier "${var.alias}" --function-url-auth-type "${var.function_url.authorization_type}"
     EOT
+  }
+}
+
+resource "aws_security_group" "vpc_access_sg" {
+  count = local.vpc_access_enabled ? 1 : 0
+  name = "${var.function_name}-${var.vpc_id}-sg"
+  vpc_id = var.vpc_id
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = [data.aws_vpc.target[0].cidr_block]
   }
 }

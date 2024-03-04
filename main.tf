@@ -102,6 +102,8 @@ module "test_lambda_kotlin" {
   publish       = true
   alias         = "apigw-v1"
   integrations  = ["apigateway"]
+#  vpc_id = data.aws_vpcs.main_vpc.ids[0]
+#  vpc_config_subnets = data.aws_subnets.private_subnets.ids
   depends_on    = [module.iam]
 }
 
@@ -142,6 +144,17 @@ data "aws_vpcs" "main_vpc" {
   filter {
     name   = "tag:Name"
     values = ["${var.aws_region}-main_vpc"]
+  }
+}
+
+data "aws_subnets" "private_subnets" {
+  filter {
+    name   = "vpc-id"
+    values = tolist(data.aws_vpcs.main_vpc.ids)
+  }
+  filter {
+    name   = "tag:Tier"
+    values = ["Private"]
   }
 }
 
